@@ -1,5 +1,5 @@
 from fastapi import FastAPI, status, Depends, HTTPException
-from models import models
+from models import UserModel
 from database import engine, SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session
@@ -8,7 +8,7 @@ from router.auth import get_current_user, get_current_active_user, router
 app = FastAPI()
 app.include_router(router)
 
-models.Base.metadata.create_all(bind=engine)
+UserModel.Base.metadata.create_all(bind=engine)
 
 def get_db():
     db = SessionLocal()
