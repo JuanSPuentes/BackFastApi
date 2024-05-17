@@ -5,12 +5,11 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status 
 from database import SessionLocal
-from models import User, UserType
+from models.models import User, UserType
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from typing import Optional
-from models import UserType
 
 router = APIRouter(
     prefix='/auth',
@@ -61,9 +60,13 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
 async def create_user(request: CreateUserRequest, db: db_dependency):
-    create_user_model = User(username=request.username, hashed_password=bcrypt_context.hash(request.password))
-    db.add(create_user_model)
-    db.commit()
+    try:
+        create_user_model = User(username=request.username, hashed_password=bcrypt_context.hash(request.password), user_type=UserType.user.value)
+        db.add(create_user_model)
+        db.commit()
+        return {'username': request.username}
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username already exists')
 
 @router.post('/token', response_model=Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):

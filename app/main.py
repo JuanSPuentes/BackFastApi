@@ -1,9 +1,9 @@
 from fastapi import FastAPI, status, Depends, HTTPException
-import models
+from models import models
 from database import engine, SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session
-from auth import get_current_user, get_current_active_user, router
+from router.auth import get_current_user, get_current_active_user, router
 
 app = FastAPI()
 app.include_router(router)
