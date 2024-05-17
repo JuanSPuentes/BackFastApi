@@ -1,9 +1,7 @@
 import pytest
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine, StaticPool
 from fastapi.testclient import TestClient
-from database import SessionLocal, engine
-from models.models import User, UserType
+from database import engine
 from main import app, get_db
 
 client = TestClient(app)
