@@ -1,5 +1,5 @@
 from database import Base
-from pydantic import BaseModel, EmailStr, constr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy import Column, Integer, String
 from enum import Enum
 

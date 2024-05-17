@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 from database import engine
 from main import app, get_db
+from models.UserModel import CreateUserRequest
 
 client = TestClient(app)
 
@@ -31,6 +32,19 @@ def test_create_user_with_invalid_username():
     )
     assert response.status_code == 422
     
+def test_create_user_request_with_invalid_password():
+    with pytest.raises(ValueError):
+        CreateUserRequest(username="testuser@gmail.com", password="short")
+
+def test_create_user_request_with_empty_password():
+    with pytest.raises(ValueError):
+        CreateUserRequest(username="testuser@gmail.com", password="")
+
+def test_create_user_request_with_long_password():
+    request = CreateUserRequest(username="testuser@gmail.com", password="averylongpassword")
+    assert request.username == "testuser@gmail.com"
+    assert request.password == "averylongpassword"
+
 def test_login_for_access_token():
     response = client.post(
         "/auth/token",

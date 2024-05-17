@@ -10,6 +10,7 @@ from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from typing import Optional
+from utils.security import get_current_user
 
 router = APIRouter(
     prefix='/auth',
@@ -37,19 +38,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-async def get_current_user(token: Annotated[str, Depends(oauth2_bearer)]):
-    credentials_exception = HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Could not validate credentials')
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get('sub')
-        user_id: int = payload.get('id')
-        user_type: UserType = payload.get("user_type")
-        if username is None or user_id is None:
-            raise credentials_exception
-        return {'username': username, 'user_id': user_id, 'user_type': user_type}
-    except JWTError:
-        raise credentials_exception
     
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
@@ -62,7 +50,7 @@ async def create_user(request: CreateUserRequest, db: db_dependency):
         db.commit()
         return {'username': request.username}
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Username already exists')
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 @router.post('/token', response_model=Token)
 async def login_for_access_token(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], db: db_dependency):
@@ -82,13 +70,3 @@ def create_access_token(username: str, user_id: int, user_type: str, expires_del
     to_encode = {'exp': datetime.now(UTC) + expires_delta, 'sub': username, 'id': user_id, 'user_type': user_type}
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
-
-def get_current_active_admin(current_user: user_dependency):
-    if current_user['user_type'] != UserType.admin.value:
-        raise HTTPException(status_code=400, detail="Not an admin")
-    return current_user
-
-def get_current_active_user(current_user: user_dependency):
-    if current_user['user_type'] != UserType.user.value:
-        raise HTTPException(status_code=400, detail="Not an user")
-    return current_user
