@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status 
 from database import SessionLocal
-from models.models import User, UserType
+from models.models import User, UserType, CreateUserRequest
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
@@ -22,10 +22,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
-
-class CreateUserRequest(BaseModel):
-    username: str
-    password: str
 
 class Token(BaseModel):
     access_token: str
