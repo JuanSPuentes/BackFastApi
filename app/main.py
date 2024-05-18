@@ -3,11 +3,13 @@ from models import UserModel, ProductModel
 from database import engine, SessionLocal
 from typing import Annotated
 from sqlalchemy.orm import Session
-from router.auth import get_current_user, router
+from router.auth import get_current_user, router as auth_router
+from router.product import router as product_router
 from utils.security import get_current_active_user
 
 app = FastAPI()
-app.include_router(router)
+app.include_router(auth_router)
+app.include_router(product_router)
 
 UserModel.Base.metadata.create_all(bind=engine)
 ProductModel.Base.metadata.create_all(bind=engine)

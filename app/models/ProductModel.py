@@ -10,22 +10,20 @@ class DataLoadLog(Base):
     __tablename__ = "data_load_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    date = Column(Date, default=func.current_timestamp())
-    product_deals = relationship('ProductDeal', back_populates='date_log')
+    date = Column(Date, default=func.current_date())
 
 class ProductDeal(Base):
     __tablename__ = "product_deals"
 
     id = Column(Integer, primary_key=True, index=True)
     title =  Column(String)
-    price = Column(Numeric(precision=10, scale=2), nullable=True)
+    price = Column(String, nullable=True)
     total_rating = Column(Integer, nullable=True)
     img = Column(String)
     discount = Column(Integer, nullable=True)
     url = Column(String)
     date = Column(Date, default=func.current_timestamp())
-    date_log_id = Column(Integer, ForeignKey('data_load_logs.id'))
-    date_log = relationship('DataLoadLog', back_populates='product_deals')
+    active = Column(Integer, default=1)
 
 class CreateDataLoadLogRequest(BaseModel):
     date:Optional[date]
