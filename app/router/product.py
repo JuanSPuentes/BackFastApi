@@ -7,14 +7,13 @@ import pandas as pd
 from database import SessionLocal
 from router.auth import get_current_user
 from utils.security import get_current_active_user, get_current_active_admin
-from models.ProductModel import ProductDeal, DataLoadLog
+from models.product_model import ProductDeal, DataLoadLog
 from datetime import datetime, date
 
 router = APIRouter(
     prefix='/product',
     tags=['product']
 )
-
 
 def get_db():
     db = SessionLocal()
@@ -23,12 +22,10 @@ def get_db():
     finally:
         db.close()
 
-
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
 
-
-@router.post("/uploadfile/", status_code=201, dependencies=[Depends(get_current_active_admin)])
+@router.post("/load-products/", status_code=201, dependencies=[Depends(get_current_active_admin)])
 async def create_upload_file(db: db_dependency, file: UploadFile = File(...)):
     """
     Endpoint to upload a CSV file and insert its data into the database.
@@ -59,8 +56,7 @@ async def create_upload_file(db: db_dependency, file: UploadFile = File(...)):
         raise HTTPException(
             status_code=400, detail="File must be in CSV format.")
 
-
-@router.get("/products/", status_code=200, dependencies=[Depends(get_current_active_user)])
+@router.get("/list-products/", status_code=200, dependencies=[Depends(get_current_active_user)])
 async def list_products(db: db_dependency, page: int = 1, limit: int = 10):
     """
     Retrieve a list of products.
@@ -81,7 +77,7 @@ async def list_products(db: db_dependency, page: int = 1, limit: int = 10):
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.put("/products/deactivate-all/", status_code=200, dependencies=[Depends(get_current_active_admin)])
+@router.put("/products/deactivate-all-by-date/", status_code=200, dependencies=[Depends(get_current_active_admin)])
 async def deactivate_all_products(db: db_dependency, date: date = datetime.now().date()):
     """
     Deactivates all products for a given date.
@@ -101,3 +97,9 @@ async def deactivate_all_products(db: db_dependency, date: date = datetime.now()
         return {"message": "All products deactivated successfully."}
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+""" /products/delete-product-by-id/ """
+""" /products/delete-product-by-date/ """
+""" /products/create-product/ """
+""" /products/get-product-by-id/ """
+""" /products/get-product-by-category/ """

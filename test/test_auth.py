@@ -3,7 +3,7 @@ from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 from database import engine
 from main import app, get_db
-from models.UserModel import CreateUserRequest
+from models.user_model import CreateUserRequest
 
 client = TestClient(app)
 

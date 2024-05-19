@@ -11,7 +11,11 @@ class DataLoadLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, default=func.current_date())
+class Category(Base):
+    __tablename__ = "categories"
 
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String)
 class ProductDeal(Base):
     __tablename__ = "product_deals"
 
@@ -24,7 +28,8 @@ class ProductDeal(Base):
     url = Column(String)
     date = Column(Date, default=func.current_timestamp())
     active = Column(Integer, default=1)
-
+    category_id = Column(Integer, ForeignKey("categories.id"))
+    category = relationship("Category", backref="product_deals")
 class CreateDataLoadLogRequest(BaseModel):
     date:Optional[date]
 
@@ -35,3 +40,6 @@ class CreateProductDealRequest(BaseModel):
     img: HttpUrl
     discount: Optional[int]
     url: HttpUrl
+
+class CreateCategoryRequest(BaseModel):
+    name: str

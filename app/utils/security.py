@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from jose import JWTError, jwt
 from fastapi.security import OAuth2PasswordBearer
-from models.UserModel import  UserType
+from models.user_model import  UserType
 from typing import Annotated
 
 SECRET_KEY = 'ASqJt}rMH[Qp.0rFlri0;@P1P*Ve1$e+qD3A<$"`pQ)AB:.@&t}w-zBdWuw*n`|'
