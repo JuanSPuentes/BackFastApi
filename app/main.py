@@ -5,11 +5,14 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 from router.auth import get_current_user, router as auth_router
 from router.product import router as product_router
+from router.category  import router as category_router
 from utils.security import get_current_active_user
+from utils.response_generator import ResponseGenerator
 
 app = FastAPI()
 app.include_router(auth_router)
 app.include_router(product_router)
+app.include_router(category_router)
 
 user_model.Base.metadata.create_all(bind=engine)
 product_model.Base.metadata.create_all(bind=engine)
@@ -28,4 +31,4 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 async def user(user: user_dependency):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication empty')
-    return {'user': user}
+    return ResponseGenerator(user, user_model.User.__name__,).generate_response()

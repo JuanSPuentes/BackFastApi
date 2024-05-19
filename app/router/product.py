@@ -5,10 +5,10 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import insert
 import pandas as pd
 from database import SessionLocal
-from router.auth import get_current_user
 from utils.security import get_current_active_user, get_current_active_admin
 from models.product_model import ProductDeal, DataLoadLog
 from datetime import datetime, date
+from utils.response_generator import ResponseGenerator
 
 router = APIRouter(
     prefix='/product',
@@ -23,7 +23,6 @@ def get_db():
         db.close()
 
 db_dependency = Annotated[Session, Depends(get_db)]
-user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @router.post("/load-products/", status_code=201, dependencies=[Depends(get_current_active_admin)])
 async def create_upload_file(db: db_dependency, file: UploadFile = File(...)):
@@ -71,9 +70,8 @@ async def list_products(db: db_dependency, page: int = 1, limit: int = 10):
     try:
         query = db.query(ProductDeal).filter(ProductDeal.active == 1).offset(
             (page - 1) * limit).limit(limit).all()
-        return {"data": query,
-                'pagination':
-                {'current_page': page, 'limit_per_page': limit, 'item_per_page': len(query), 'next_page': page + 1 if len(query) == limit else None, 'previous_page': page - 1 if page > 1 else None, 'total_items': db.query(ProductDeal).filter(ProductDeal.active == 1).count()}}
+        additional_data = {'current_page': page, 'limit_per_page': limit, 'item_per_page': len(query), 'next_page': page + 1 if len(query) == limit else None, 'previous_page': page - 1 if page > 1 else None, 'total_items': db.query(ProductDeal).filter(ProductDeal.active == 1).count()}
+        return ResponseGenerator(query, ProductDeal.__name__ , additional_data).generate_response()
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
     
@@ -103,3 +101,4 @@ async def deactivate_all_products(db: db_dependency, date: date = datetime.now()
 """ /products/create-product/ """
 """ /products/get-product-by-id/ """
 """ /products/get-product-by-category/ """
+""" /products/order-product-by-discount/ """

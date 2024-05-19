@@ -62,7 +62,7 @@ def test_user_endpoint_with_valid_user():
 
     response = client.get("/", headers={"Authorization": 'Bearer ' + token})
     assert response.status_code == 200
-    assert response.json()['user']['username'] ==  "testuser@gmail.com"
+    assert response.json()['data']['User']['username'] ==  "testuser@gmail.com"
 
 def test_user_endpoint_with_invalid_user():
     response = client.get("/", headers={"Authorization": "Bearer invalid_token"})
