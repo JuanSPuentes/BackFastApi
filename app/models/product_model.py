@@ -34,6 +34,7 @@ class CreateDataLoadLogRequest(BaseModel):
     date:Optional[date]
 
 class CreateProductDealRequest(BaseModel):
+    id: Optional[int]
     title: str
     price: Optional[int]
     total_rating: Optional[int]
@@ -42,4 +43,5 @@ class CreateProductDealRequest(BaseModel):
     url: HttpUrl
 
 class CreateCategoryRequest(BaseModel):
+    id: Optional[int]
     name: str
