@@ -82,7 +82,7 @@ async def get_category(db: db_dependency, category_id: int):
         raise HTTPException(status_code=404, detail="Category not found.")
     return ResponseGenerator(category, Category.__name__,).generate_response()
 
-@router.put("/update-category", status_code=200)
+@router.put("/update-category", status_code=200, dependencies=[Depends(get_current_active_admin)])
 async def update_category(db: db_dependency, category: CreateCategoryRequest):
     """
     Update a category in the database.
@@ -104,5 +104,17 @@ async def update_category(db: db_dependency, category: CreateCategoryRequest):
         db.commit()
         db.refresh(existing_category)
         return ResponseGenerator(existing_category, Category.__name__,).generate_response()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.delete("/delete-category/{category_id}/", status_code=200, dependencies=[Depends(get_current_active_admin)])
+async def delete_category(db: db_dependency, category_id: int):
+    existing_category = db.query(Category).filter(Category.id == category_id).first()
+    if not existing_category:
+        raise HTTPException(status_code=404, detail="Category not found.")
+    try:
+        db.delete(existing_category)
+        db.commit()
+        return {"message": "Category deleted successfully."}
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))

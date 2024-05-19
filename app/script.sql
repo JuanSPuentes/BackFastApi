@@ -8,3 +8,7 @@ COMMIT;
 BEGIN TRANSACTION;
 UPDATE product_deals set active = 1;
 COMMIT;
+
+BEGIN TRANSACTION;
+DELETE FROM product_deals;
+COMMIT;

@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from pydantic import BaseModel, HttpUrl
 from typing import Optional
-from sqlalchemy import Column, Integer, Date, String, ForeignKey, Numeric
+from sqlalchemy import Column, Integer, Date, String, ForeignKey, Numeric, DateTime
 from datetime import date
 
 class DataLoadLog(Base):
@@ -16,6 +16,11 @@ class Category(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String)
+    updated_at = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
+    create_at = Column(DateTime, default=func.current_timestamp())
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 class ProductDeal(Base):
     __tablename__ = "product_deals"
 
@@ -28,8 +33,14 @@ class ProductDeal(Base):
     url = Column(String)
     date = Column(Date, default=func.current_timestamp())
     active = Column(Integer, default=1)
+    deleted = Column(Integer, default=0)
     category_id = Column(Integer, ForeignKey("categories.id"))
     category = relationship("Category", backref="product_deals")
+    updated_at = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
+    create_at = Column(DateTime, default=func.current_timestamp())
+
+    def as_dict(self):
+        return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 class CreateDataLoadLogRequest(BaseModel):
     date:Optional[date]
 
