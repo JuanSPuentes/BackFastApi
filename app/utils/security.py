@@ -31,6 +31,7 @@ def get_current_active_admin(current_user: user_dependency):
     return current_user
 
 def get_current_active_user(current_user: user_dependency):
-    if current_user['user_type'] != UserType.user.value:
-        raise HTTPException(status_code=403, detail="Not an user")
-    return current_user
+    if current_user['user_type'] != UserType.user.value or current_user['user_type'] != UserType.admin.value:
+        return current_user
+    raise HTTPException(status_code=403, detail="Not an user")
+    
