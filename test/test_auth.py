@@ -1,8 +1,6 @@
 import pytest
-from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
-from database import engine
-from main import app, get_db
+from main import app
 from models.user_model import CreateUserRequest
 
 client = TestClient(app)

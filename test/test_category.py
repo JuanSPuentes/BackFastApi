@@ -1,9 +1,6 @@
 import pytest
-from fastapi.testclient import TestClient
-from main import app, get_db
 from models.product_model import Category, CreateCategoryRequest
-from database import engine
-from models.user_model import CreateUserRequest, User
+from models.user_model import User
 
 def login_or_create_admin(client, db_session):
     client.post("/auth/", json={"username": "admin@example.com", "password": "adminpassword"})
@@ -52,7 +49,7 @@ def test_update_category(client, db_session):
     db_session.add(category)
     db_session.commit()
     updated_category_data = CreateCategoryRequest(id= category.id, name="Updated Category")
-    response = client.put("/category/update-category", headers={"Authorization": 'Bearer ' + token}, json=updated_category_data.dict())
+    response = client.put("/category/update-category", headers={"Authorization": 'Bearer ' + token}, json=updated_category_data.model_dump())
     db_session.close()
     assert response.status_code == 200
 
