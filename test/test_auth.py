@@ -7,16 +7,6 @@ from models.user_model import CreateUserRequest
 
 client = TestClient(app)
 
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-def override_get_db():
-    database = TestingSessionLocal()
-    yield database
-    database.close()
-
-
-app.dependency_overrides[get_db] = override_get_db
-
 def test_create_user_with_valid_username():
     response = client.post(
         "/auth/",
