@@ -5,8 +5,6 @@ from models.product_model import Category, CreateCategoryRequest
 from database import engine
 from models.user_model import CreateUserRequest, User
 
-client = TestClient(app)
-
 def login_or_create_admin(client, db_session):
     client.post("/auth/", json={"username": "admin@example.com", "password": "adminpassword"})
     db_session.query(User).where(User.username == "admin@example.com").update({User.user_type: 'admin'})
