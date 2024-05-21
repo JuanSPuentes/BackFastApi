@@ -9,6 +9,8 @@ from router.category  import router as category_router
 from utils.security import get_current_active_user
 from utils.response_generator import ResponseGenerator
 from fastapi.openapi.utils import get_openapi
+from utils.response_generator import ResponseModel
+from schemas.auth_schema import UserDataModel, UserResponse
 
 app = FastAPI()
 app.include_router(auth_router)
@@ -32,9 +34,9 @@ def custom_openapi():
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
-        title="Mi API Customizada",
+        title="FastAPI Custom OpenAPI",
         version="1.0.0",
-        description="Esta es una API personalizada con FastAPI",
+        description="This is a very custom OpenAPI schema",
         routes=app.routes,
     )
     app.openapi_schema = openapi_schema
@@ -42,7 +44,7 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-@app.get('/', status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_active_user)])
+@app.get('/', status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_active_user)], response_model=ResponseModel[UserDataModel])
 async def user(user: user_dependency):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication empty')
