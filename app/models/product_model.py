@@ -6,11 +6,6 @@ from typing import Optional
 from sqlalchemy import Column, Integer, Date, String, ForeignKey, Numeric, DateTime, URL
 from datetime import date
 
-class DataLoadLog(Base):
-    __tablename__ = "data_load_logs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    date = Column(Date, default=func.current_date())
 class Category(Base):
     __tablename__ = "categories"
 
@@ -41,8 +36,6 @@ class ProductDeal(Base):
 
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
-class CreateDataLoadLogRequest(BaseModel):
-    date:Optional[date]
 
 class CreateProductDealRequest(BaseModel):
     id: Optional[int]

@@ -6,7 +6,7 @@ from sqlalchemy import insert
 import pandas as pd
 from database import SessionLocal
 from utils.security import get_current_active_user, get_current_active_admin
-from models.product_model import ProductDeal, DataLoadLog, Category, CreateProductDealRequest
+from models.product_model import ProductDeal, Category, CreateProductDealRequest
 from datetime import datetime, date
 from utils.response_generator import ResponseGenerator
 
@@ -49,6 +49,7 @@ async def load_products_by_category(db: db_dependency, category_id: int, file: U
                 raise HTTPException(status_code=404, detail="Category not found.")
             df['category_id'] = category_id.id
             df['price'] = df['price'].str.replace('$', '').astype(str).str.replace(',', '').astype(float)
+            df['discount'] = df['discount'].str.replace('%', '').str.replace('-', '').astype(str).str.replace(',', '').astype(int)
             items = df.to_dict(orient='records')
             stmt = insert(ProductDeal)
             db.execute(stmt, items)
@@ -175,7 +176,76 @@ async def create_product(db: db_dependency, product: CreateProductDealRequest):
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-""" /products/create-product/ """
-""" /products/get-product-by-id/ """
-""" /products/get-product-by-category/ """
-""" /products/order-product-by-discount/ """
+@router.get("/get-product-by-id/", status_code=200, dependencies=[Depends(get_current_active_user)])
+async def get_product_by_id(db: db_dependency, product_id: int):
+    """
+    Get a product by its ID.
+
+    Args:
+        product_id (int): The ID of the product to retrieve.
+
+    Returns:
+        dict: A dictionary representing the product.
+
+    Raises:
+        HTTPException: If there is an error during the retrieval process.
+    """
+    try:
+        product = db.query(ProductDeal).filter(ProductDeal.id == product_id).first()
+        if not product:
+            raise HTTPException(status_code=404, detail="Product not found.")
+        return ResponseGenerator(product, ProductDeal.__name__).generate_response()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/get-product-by-category/", status_code=200, dependencies=[Depends(get_current_active_user)])
+async def get_product_by_category(db: db_dependency, category_id: int, page: int = 1, limit: int = 10):
+    """
+    Get products by category.
+
+    Args:
+        category_id (int): The category ID to filter the products.
+        page (int, optional): The page number. Defaults to 1.
+        limit (int, optional): The number of items per page. Defaults to 10.
+
+    Returns:
+        dict: A dictionary containing the list of products and pagination information.
+
+    Raises:
+        HTTPException: If there is an error during the retrieval process.
+    """
+    try:
+        query = db.query(ProductDeal).filter(ProductDeal.category_id == category_id).filter(ProductDeal.active == 1).filter(ProductDeal.deleted == 0).offset(
+            (page - 1) * limit).limit(limit).all()
+        additional_data = {'current_page': page, 'limit_per_page': limit, 'item_per_page': len(query), 'next_page': page + 1 if len(query) == limit else None, 'previous_page': page - 1 if page > 1 else None, 'total_items': db.query(ProductDeal).filter(ProductDeal.category_id == category_id).filter(ProductDeal.active == 1).filter(ProductDeal.deleted == 0).count()}
+        return ResponseGenerator(query, ProductDeal.__name__ , additional_data).generate_response()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/get-product-by-discount/", status_code=200, dependencies=[Depends(get_current_active_user)])
+async def get_product_by_discount(db: db_dependency, page: int = 1, limit: int = 10, order: str = "desc"):
+    """
+    Get products by discount.
+
+    Args:
+        page (int, optional): The page number. Defaults to 1.
+        limit (int, optional): The number of items per page. Defaults to 10.
+        order (str, optional): The order of the results. Must be 'asc' or 'desc'. Defaults to 'desc'.
+
+    Returns:
+        dict: The response containing the queried products, additional data, and status code.
+
+    Raises:
+        HTTPException: If the order parameter is not 'asc' or 'desc'.
+        HTTPException: If there is an error executing the database query.
+    """
+    try:    
+        if order not in ["asc", "desc"]:
+            raise HTTPException(status_code=400, detail="Order must be 'asc' or 'desc'")
+        order_criteria = ProductDeal.discount.asc() if order == "asc" else ProductDeal.discount.desc()
+        query = db.query(ProductDeal).filter(ProductDeal.active == 1).filter(ProductDeal.deleted == 0).order_by(order_criteria).offset(
+            (page - 1) * limit).limit(limit).all()
+        additional_data = {'current_page': page, 'limit_per_page': limit, 'item_per_page': len(query), 'next_page': page + 1 if len(query) == limit else None, 'previous_page': page - 1 if page > 1 else None, 'total_items': db.query(ProductDeal).filter(ProductDeal.discount > 0).filter(ProductDeal.active == 1).filter(ProductDeal.deleted == 0).count()}
+        return ResponseGenerator(query, ProductDeal.__name__ , additional_data).generate_response()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
