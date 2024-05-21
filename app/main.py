@@ -8,6 +8,7 @@ from router.product import router as product_router
 from router.category  import router as category_router
 from utils.security import get_current_active_user
 from utils.response_generator import ResponseGenerator
+from fastapi.openapi.utils import get_openapi
 
 app = FastAPI()
 app.include_router(auth_router)
@@ -26,6 +27,20 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 user_dependency = Annotated[dict, Depends(get_current_user)]
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title="Mi API Customizada",
+        version="1.0.0",
+        description="Esta es una API personalizada con FastAPI",
+        routes=app.routes,
+    )
+    app.openapi_schema = openapi_schema
+    return openapi_schema
+
+app.openapi = custom_openapi
 
 @app.get('/', status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_active_user)])
 async def user(user: user_dependency):

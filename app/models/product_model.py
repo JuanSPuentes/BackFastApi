@@ -1,10 +1,7 @@
 from database import Base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from pydantic import BaseModel, HttpUrl
-from typing import Optional
 from sqlalchemy import Column, Integer, Date, String, ForeignKey, Numeric, DateTime, URL
-from datetime import date
 
 class Category(Base):
     __tablename__ = "categories"
@@ -36,18 +33,3 @@ class ProductDeal(Base):
 
     def as_dict(self):
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
-
-class CreateProductDealRequest(BaseModel):
-    id: Optional[int]
-    title: str
-    price: Optional[int]
-    total_rating: Optional[int]
-    img: Optional[str]
-    discount: Optional[int]
-    url: Optional[str]
-    date: Optional[date]
-    category_id: int
-
-class CreateCategoryRequest(BaseModel):
-    id: Optional[int]
-    name: str

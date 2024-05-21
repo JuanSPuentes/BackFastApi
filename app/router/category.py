@@ -1,5 +1,6 @@
-from models.product_model import Category, CreateCategoryRequest
-from fastapi import HTTPException, Depends, APIRouter
+from models.product_model import Category
+from schemas.product_schema import CreateCategoryRequest, CategoryDataModel, CategoryDataModelList
+from fastapi import HTTPException, Depends, APIRouter, Response
 from database import SessionLocal
 from typing import Annotated
 from sqlalchemy.exc import SQLAlchemyError
@@ -7,6 +8,7 @@ from sqlalchemy.orm import Session
 from utils.security import get_current_active_admin
 from utils.response_generator import ResponseGenerator
 from fastapi import APIRouter
+from utils.response_generator import ResponseModel, MessageResponse
 
 router = APIRouter(
     prefix='/category',
@@ -22,7 +24,7 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-@router.post("/create-category/", status_code=201, dependencies=[Depends(get_current_active_admin)])
+@router.post("/create-category/", status_code=201, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModel])
 async def create_category(db: db_dependency, category: CreateCategoryRequest):
     """
     Endpoint to create a new category.
@@ -41,11 +43,11 @@ async def create_category(db: db_dependency, category: CreateCategoryRequest):
         db.add(new_category)
         db.commit()
         db.refresh(new_category)
-        return ResponseGenerator(new_category, Category.__name__,).generate_response()
+        return ResponseGenerator(new_category, Category.__name__).generate_response()
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/list-categories/", status_code=200, dependencies=[Depends(get_current_active_admin)])
+@router.get("/list-categories/", status_code=200, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModelList])
 async def list_categories(db: db_dependency, page: int = 1, limit: int = 10):
     """
     Endpoint to list all categories.
@@ -63,7 +65,7 @@ async def list_categories(db: db_dependency, page: int = 1, limit: int = 10):
     categories = db.query(Category).offset((page - 1) * limit).limit(limit).all()
     return ResponseGenerator(categories, Category.__name__,).generate_response()
 
-@router.get("/get-category/{category_id}/", status_code=200, dependencies=[Depends(get_current_active_admin)])
+@router.get("/get-category/{category_id}/", status_code=200, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModel])
 async def get_category(db: db_dependency, category_id: int):
     """
     Endpoint to get a category by ID.
@@ -82,7 +84,7 @@ async def get_category(db: db_dependency, category_id: int):
         raise HTTPException(status_code=404, detail="Category not found.")
     return ResponseGenerator(category, Category.__name__,).generate_response()
 
-@router.put("/update-category", status_code=200, dependencies=[Depends(get_current_active_admin)])
+@router.put("/update-category", status_code=200, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModel])
 async def update_category(db: db_dependency, category: CreateCategoryRequest):
     """
     Update a category in the database.
@@ -107,7 +109,7 @@ async def update_category(db: db_dependency, category: CreateCategoryRequest):
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@router.delete("/delete-category/{category_id}/", status_code=200, dependencies=[Depends(get_current_active_admin)])
+@router.delete("/delete-category/{category_id}/", status_code=200, dependencies=[Depends(get_current_active_admin)], response_model=MessageResponse)
 async def delete_category(db: db_dependency, category_id: int):
     """
     Delete a category from the database.

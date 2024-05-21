@@ -6,7 +6,8 @@ from sqlalchemy import insert
 import pandas as pd
 from database import SessionLocal
 from utils.security import get_current_active_user, get_current_active_admin
-from models.product_model import ProductDeal, Category, CreateProductDealRequest
+from models.product_model import ProductDeal, Category
+from schemas.product_schema import CreateProductDealRequest
 from datetime import datetime, date
 from utils.response_generator import ResponseGenerator
 

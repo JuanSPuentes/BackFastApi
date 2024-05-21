@@ -1,15 +1,14 @@
 from datetime import timedelta, datetime, UTC
 from typing import Annotated
 from fastapi import Depends, APIRouter, HTTPException
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette import status 
 from database import SessionLocal
-from models.user_model import User, UserType, CreateUserRequest
+from models.user_model import User, UserType
+from schemas.auth_schema import CreateUserRequest, Token, TokenData
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
-from typing import Optional
 from utils.security import get_current_user
 
 router = APIRouter(
@@ -24,14 +23,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 30
 bcrypt_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 oauth2_bearer = OAuth2PasswordBearer(tokenUrl='auth/token')
 
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-
-class TokenData(BaseModel):
-    username: Optional[str] = None
-    user_type: Optional[UserType] = None
-
 def get_db():
     db = SessionLocal()
     try:
@@ -44,6 +35,18 @@ user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @router.post('/', status_code=status.HTTP_201_CREATED)
 async def create_user(request: CreateUserRequest, db: db_dependency):
+    """
+    Create a new user.
+
+    Args:
+        request (CreateUserRequest): The request object containing the user information.
+
+    Returns:
+        dict: A dictionary containing the username of the created user.
+
+    Raises:
+        HTTPException: If there is a conflict while creating the user.
+    """
     try:
         create_user_model = User(username=request.username, hashed_password=bcrypt_context.hash(request.password), user_type=UserType.user.value)
         db.add(create_user_model)
