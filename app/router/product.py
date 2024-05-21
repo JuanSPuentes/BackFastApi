@@ -6,7 +6,7 @@ from sqlalchemy import insert
 import pandas as pd
 from database import SessionLocal
 from utils.security import get_current_active_user, get_current_active_admin
-from models.product_model import ProductDeal, DataLoadLog, Category
+from models.product_model import ProductDeal, DataLoadLog, Category, CreateProductDealRequest
 from datetime import datetime, date
 from utils.response_generator import ResponseGenerator
 
@@ -48,6 +48,7 @@ async def load_products_by_category(db: db_dependency, category_id: int, file: U
             if not category_id:
                 raise HTTPException(status_code=404, detail="Category not found.")
             df['category_id'] = category_id.id
+            df['price'] = df['price'].str.replace('$', '').astype(str).str.replace(',', '').astype(float)
             items = df.to_dict(orient='records')
             stmt = insert(ProductDeal)
             db.execute(stmt, items)
@@ -145,6 +146,32 @@ async def delete_product_by_date(db: db_dependency, date: date = datetime.now().
         product_list.update({ProductDeal.deleted: 1})
         db.commit()
         return {"message": f"Total {total_products} Products deleted successfully"}
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/create-product/", status_code=201, dependencies=[Depends(get_current_active_admin)])
+async def create_product(db: db_dependency, product: CreateProductDealRequest):
+    """
+    Create a product.
+
+    Args:
+        product (ProductDeal): The product data to be created.
+
+    Returns:
+        dict: A dictionary representing the created product.
+
+    Raises:
+        HTTPException: If there is an error during the creation process.
+    """
+    try:
+        category_id = db.query(Category).filter(Category.id == product.category_id).first()
+        if not category_id:
+            raise HTTPException(status_code=404, detail="Category not found.")
+        new_product = ProductDeal(**product.model_dump(exclude={'id'}))
+        db.add(new_product)
+        db.commit()
+        db.refresh(new_product)
+        return ResponseGenerator(new_product, ProductDeal.__name__).generate_response()
     except SQLAlchemyError as e:
         raise HTTPException(status_code=500, detail=str(e))
 

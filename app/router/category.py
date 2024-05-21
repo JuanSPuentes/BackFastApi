@@ -109,6 +109,18 @@ async def update_category(db: db_dependency, category: CreateCategoryRequest):
     
 @router.delete("/delete-category/{category_id}/", status_code=200, dependencies=[Depends(get_current_active_admin)])
 async def delete_category(db: db_dependency, category_id: int):
+    """
+    Delete a category from the database.
+
+    Args:
+        category_id (int): The ID of the category to delete.
+
+    Returns:
+        dict: A dictionary containing a success message if the category is deleted successfully.
+
+    Raises:
+        HTTPException: If the category is not found or if there is an error during deletion.
+    """
     existing_category = db.query(Category).filter(Category.id == category_id).first()
     if not existing_category:
         raise HTTPException(status_code=404, detail="Category not found.")

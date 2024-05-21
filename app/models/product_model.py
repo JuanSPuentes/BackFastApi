@@ -3,7 +3,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from pydantic import BaseModel, HttpUrl
 from typing import Optional
-from sqlalchemy import Column, Integer, Date, String, ForeignKey, Numeric, DateTime
+from sqlalchemy import Column, Integer, Date, String, ForeignKey, Numeric, DateTime, URL
 from datetime import date
 
 class DataLoadLog(Base):
@@ -26,11 +26,11 @@ class ProductDeal(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title =  Column(String)
-    price = Column(String, nullable=True)
+    price = Column(Numeric(precision=10, scale=2), nullable=True)
     total_rating = Column(Integer, nullable=True)
-    img = Column(String)
+    img = Column(String, nullable=True)
     discount = Column(Integer, nullable=True)
-    url = Column(String)
+    url = Column(String, nullable=True)
     date = Column(Date, default=func.current_timestamp())
     active = Column(Integer, default=1)
     deleted = Column(Integer, default=0)
@@ -49,9 +49,11 @@ class CreateProductDealRequest(BaseModel):
     title: str
     price: Optional[int]
     total_rating: Optional[int]
-    img: HttpUrl
+    img: Optional[str]
     discount: Optional[int]
-    url: HttpUrl
+    url: Optional[str]
+    date: Optional[date]
+    category_id: int
 
 class CreateCategoryRequest(BaseModel):
     id: Optional[int]
