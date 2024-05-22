@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from main import app
-from models.user_model import CreateUserRequest
+from schemas.auth_schema import CreateUserRequest
 
 client = TestClient(app)
 
@@ -48,11 +48,11 @@ def test_user_endpoint_with_valid_user():
         data={"username": "testuser@gmail.com", "password": "testpassword"},
     ).json()["access_token"]
 
-    response = client.get("/", headers={"Authorization": 'Bearer ' + token})
+    response = client.get("/get-user", headers={"Authorization": 'Bearer ' + token})
     assert response.status_code == 200
     assert response.json()['data']['User']['username'] ==  "testuser@gmail.com"
 
 def test_user_endpoint_with_invalid_user():
-    response = client.get("/", headers={"Authorization": "Bearer invalid_token"})
+    response = client.get("/get-user", headers={"Authorization": "Bearer invalid_token"})
     assert response.status_code == 401
     assert response.json() == {"detail": "Could not validate credentials"}

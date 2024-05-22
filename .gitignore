@@ -6,6 +6,7 @@ __pycache__/
 *.so
 .db
 .sqlite3
+.csv
 
 # Distribution / packaging
 .Python

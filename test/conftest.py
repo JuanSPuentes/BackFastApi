@@ -5,7 +5,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from database import Base
 from main import app, get_db
-
+from models.user_model import User
 
 DATABASE_URL = "sqlite:///./database.db"
 
@@ -32,3 +32,15 @@ def client(db_session):
     app.dependency_overrides[get_db] = override_get_db
     with TestClient(app) as c:
         yield c
+
+@pytest.fixture(scope="function")
+def token(client, db_session):
+    client.post("/auth/", json={"username": "admin@example.com", "password": "adminpassword"})
+    db_session.query(User).where(User.username == "admin@example.com").update({User.user_type: 'admin'})
+    db_session.commit()
+    token = client.post(
+        "/auth/token",
+        data={"username": "admin@example.com", "password": "adminpassword"},
+    ).json()["access_token"]
+    db_session.close()
+    return token

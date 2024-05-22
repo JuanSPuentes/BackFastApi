@@ -1,40 +1,26 @@
 import pytest
-from models.product_model import Category, CreateCategoryRequest
+from models.product_model import Category
+from schemas.product_schema import CreateCategoryRequest
 from models.user_model import User
 
-def login_or_create_admin(client, db_session):
-    client.post("/auth/", json={"username": "admin@example.com", "password": "adminpassword"})
-    db_session.query(User).where(User.username == "admin@example.com").update({User.user_type: 'admin'})
-    db_session.commit()
-    token = client.post(
-        "/auth/token",
-        data={"username": "admin@example.com", "password": "adminpassword"},
-    ).json()["access_token"]
-    db_session.close()
-    return token
 
-
-def test_create_category(client, db_session):
-    token = login_or_create_admin(client, db_session)
+def test_create_category(client, db_session, token):
     category_data = CreateCategoryRequest(id=0, name="Test Category")
     response = client.post("/category/create-category/", headers={"Authorization": 'Bearer ' + token}, json=category_data.model_dump())
     assert response.status_code == 201
     assert response.json()["data"][Category.__name__]["name"] == category_data.name
 
-def test_create_category(client, db_session):
-    token = login_or_create_admin(client, db_session)
+def test_create_category(client, db_session, token):
     category_data = CreateCategoryRequest(id=0, name="Test Category")
     response = client.post("/category/create-category/", headers={"Authorization": 'Bearer ' + token}, json=category_data.model_dump())
     assert response.status_code == 201
     assert response.json()["data"][Category.__name__]["name"] == category_data.name
 
-def test_list_categories(client, db_session):
-    token = login_or_create_admin(client, db_session)
+def test_list_categories(client, db_session, token):
     response = client.get("/category/list-categories/", headers={"Authorization": 'Bearer ' + token})
     assert response.status_code == 200
 
-def test_get_category(client, db_session):
-    token = login_or_create_admin(client, db_session)
+def test_get_category(client, db_session, token):
     category = Category(name="Test Category")
     db_session.add(category)
     db_session.commit()
@@ -42,8 +28,7 @@ def test_get_category(client, db_session):
     db_session.close()
     assert response.status_code == 200
 
-def test_update_category(client, db_session):
-    token = login_or_create_admin(client, db_session)
+def test_update_category(client, db_session, token):
     category = Category(name="Test Category")
     db_session.add(category)
     db_session.commit()
@@ -52,8 +37,7 @@ def test_update_category(client, db_session):
     db_session.close()
     assert response.status_code == 200
 
-def test_delete_category(client, db_session,):
-    token = login_or_create_admin(client, db_session)
+def test_delete_category(client, db_session, token):
     category = Category(name="Test Category")
     db_session.add(category)
     db_session.commit()
