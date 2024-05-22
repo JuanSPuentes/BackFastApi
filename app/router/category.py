@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from utils.security import get_current_active_admin
 from utils.response_generator import ResponseGenerator
 from fastapi import APIRouter
-from utils.response_generator import ResponseModel, MessageResponse, AdditionalData
+from utils.response_generator import ResponseModel, MessageResponse
 
 router = APIRouter(
     prefix='/category',

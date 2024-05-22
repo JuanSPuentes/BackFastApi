@@ -259,3 +259,30 @@ async def get_product_by_discount(db: db_dependency, page: int = 1, limit: int =
         return ResponseGenerator(query, ProductDeal.__name__ , additional_data).generate_response()
     except SQLAlchemyError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+    
+@router.put("/update-product/", status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[ProductDealDataModel])
+async def update_product(db: db_dependency, product: CreateProductDealRequest):
+    """
+    Update a product.
+
+    Args:
+        product (CreateProductDealRequest): The product data to update.
+
+    Returns:
+        dict: The updated product data.
+
+    Raises:
+        HTTPException: If the product is not found or if there is a database error.
+    """
+    try:
+        product_data = db.query(ProductDeal).filter(ProductDeal.id == product.id).filter(ProductDeal.active == 1).filter(ProductDeal.deleted == 0).first()
+        if not product_data:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
+        category_id = db.query(Category).filter(Category.id == product.category_id).first()
+        if not category_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found.")
+        db.query(ProductDeal).where(ProductDeal.id == product.id).update(product.model_dump(exclude={'id'}))
+        db.commit()
+        return ResponseGenerator(product_data, ProductDeal.__name__).generate_response()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
