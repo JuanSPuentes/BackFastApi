@@ -1,6 +1,6 @@
-from models.product_model import Category
+from models.product_model import Category, ProductDeal
 from schemas.product_schema import CreateCategoryRequest, CategoryDataModel, CategoryDataModelList
-from fastapi import HTTPException, Depends, APIRouter, Response
+from fastapi import HTTPException, Depends, APIRouter, Response, status
 from database import SessionLocal
 from typing import Annotated
 from sqlalchemy.exc import SQLAlchemyError
@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from utils.security import get_current_active_admin
 from utils.response_generator import ResponseGenerator
 from fastapi import APIRouter
-from utils.response_generator import ResponseModel, MessageResponse
+from utils.response_generator import ResponseModel, MessageResponse, AdditionalData
 
 router = APIRouter(
     prefix='/category',
@@ -24,7 +24,7 @@ def get_db():
 
 db_dependency = Annotated[Session, Depends(get_db)]
 
-@router.post("/create-category/", status_code=201, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModel])
+@router.post("/create-category/", status_code=status.HTTP_201_CREATED, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModel])
 async def create_category(db: db_dependency, category: CreateCategoryRequest):
     """
     Endpoint to create a new category.
@@ -45,9 +45,9 @@ async def create_category(db: db_dependency, category: CreateCategoryRequest):
         db.refresh(new_category)
         return ResponseGenerator(new_category, Category.__name__).generate_response()
     except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.get("/list-categories/", status_code=200, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModelList])
+@router.get("/list-categories/", status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModelList])
 async def list_categories(db: db_dependency, page: int = 1, limit: int = 10):
     """
     Endpoint to list all categories.
@@ -62,10 +62,14 @@ async def list_categories(db: db_dependency, page: int = 1, limit: int = 10):
     Raises:
     - HTTPException with status code 500 if there is an error during database operations.
     """
-    categories = db.query(Category).offset((page - 1) * limit).limit(limit).all()
-    return ResponseGenerator(categories, Category.__name__,).generate_response()
+    try:
+        query = db.query(Category).offset((page - 1) * limit).limit(limit).all()
+        additional_data = {'current_page': page, 'limit_per_page': limit, 'item_per_page': len(query), 'next_page': page + 1 if len(query) == limit else None, 'previous_page': page - 1 if page > 1 else None, 'total_items': db.query(Category).count()}
+        return ResponseGenerator(query, Category.__name__, additional_data).generate_response()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
-@router.get("/get-category/{category_id}/", status_code=200, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModel])
+@router.get("/get-category/{category_id}/", status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModel])
 async def get_category(db: db_dependency, category_id: int):
     """
     Endpoint to get a category by ID.
@@ -79,12 +83,15 @@ async def get_category(db: db_dependency, category_id: int):
     Raises:
     - HTTPException with status code 404 if the category does not exist.
     """
-    category = db.query(Category).filter(Category.id == category_id).first()
-    if not category:
-        raise HTTPException(status_code=404, detail="Category not found.")
-    return ResponseGenerator(category, Category.__name__,).generate_response()
+    try:
+        category = db.query(Category).filter(Category.id == category_id).first()
+        if not category:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found.")
+        return ResponseGenerator(category, Category.__name__,).generate_response()
+    except SQLAlchemyError as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) 
 
-@router.put("/update-category", status_code=200, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModel])
+@router.put("/update-category", status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_active_admin)], response_model=ResponseModel[CategoryDataModel])
 async def update_category(db: db_dependency, category: CreateCategoryRequest):
     """
     Update a category in the database.
@@ -100,16 +107,16 @@ async def update_category(db: db_dependency, category: CreateCategoryRequest):
     """
     existing_category = db.query(Category).filter(Category.id == category.id).first()
     if not existing_category:
-        raise HTTPException(status_code=404, detail="Category not found.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found.")
     try:
         existing_category.name = category.name
         db.commit()
         db.refresh(existing_category)
         return ResponseGenerator(existing_category, Category.__name__,).generate_response()
     except SQLAlchemyError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
     
-@router.delete("/delete-category/{category_id}/", status_code=200, dependencies=[Depends(get_current_active_admin)], response_model=MessageResponse)
+@router.delete("/delete-category/{category_id}/", status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_active_admin)], response_model=MessageResponse)
 async def delete_category(db: db_dependency, category_id: int):
     """
     Delete a category from the database.
@@ -123,10 +130,13 @@ async def delete_category(db: db_dependency, category_id: int):
     Raises:
         HTTPException: If the category is not found or if there is an error during deletion.
     """
-    existing_category = db.query(Category).filter(Category.id == category_id).first()
-    if not existing_category:
-        raise HTTPException(status_code=404, detail="Category not found.")
     try:
+        existing_category = db.query(Category).filter(Category.id == category_id).first()
+        if not existing_category:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found.")
+        product_by_category = db.query(ProductDeal).filter(ProductDeal.category_id == category_id).count()
+        if product_by_category > 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Category cannot be deleted because it is associated with a product.")
         db.delete(existing_category)
         db.commit()
         return {"message": "Category deleted successfully."}

@@ -10,7 +10,8 @@ from utils.security import get_current_active_user
 from utils.response_generator import ResponseGenerator
 from fastapi.openapi.utils import get_openapi
 from utils.response_generator import ResponseModel
-from schemas.auth_schema import UserDataModel, UserResponse
+from schemas.auth_schema import UserDataModel
+from fastapi.responses import RedirectResponse
 
 app = FastAPI()
 app.include_router(auth_router)
@@ -44,8 +45,12 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-@app.get('/', status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_active_user)], response_model=ResponseModel[UserDataModel])
+@app.get('/get-user', status_code=status.HTTP_200_OK, dependencies=[Depends(get_current_active_user)], response_model=ResponseModel[UserDataModel])
 async def user(user: user_dependency):
     if user is None:
         raise HTTPException(status_code=401, detail='Authentication empty')
     return ResponseGenerator(user, user_model.User.__name__,).generate_response()
+
+@app.get('/', include_in_schema=False)
+async def root():
+    return RedirectResponse('/redoc', status_code=status.HTTP_303_SEE_OTHER)

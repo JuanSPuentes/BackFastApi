@@ -16,7 +16,6 @@ def login_or_create_admin(client, db_session):
 
 def test_create_category(client, db_session):
     token = login_or_create_admin(client, db_session)
-    print(token)
     category_data = CreateCategoryRequest(id=0, name="Test Category")
     response = client.post("/category/create-category/", headers={"Authorization": 'Bearer ' + token}, json=category_data.model_dump())
     assert response.status_code == 201
