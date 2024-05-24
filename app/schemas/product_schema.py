@@ -1,18 +1,18 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date, datetime
 from typing import List
 from typing import Optional
 
 class CreateProductDealRequest(BaseModel):
-    id: Optional[int]
-    title: str
-    price: Optional[float]
-    total_rating: Optional[int]
-    img: Optional[str]
-    discount: Optional[int]
-    url: Optional[str]
+    id: Optional[int] = None
+    title: str = None
+    price: Optional[float] = None
+    total_rating: Optional[int] = None
+    img: Optional[str] = None
+    discount: Optional[int] = None
+    url: Optional[str] = None
     date: Optional[date]
-    category_id: int
+    category_id: int = None
 
 class CreateCategoryRequest(BaseModel):
     id: Optional[int]

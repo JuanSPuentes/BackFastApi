@@ -278,11 +278,17 @@ async def update_product(db: db_dependency, product: CreateProductDealRequest):
         product_data = db.query(ProductDeal).filter(ProductDeal.id == product.id).filter(ProductDeal.active == 1).filter(ProductDeal.deleted == 0).first()
         if not product_data:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found.")
-        category_id = db.query(Category).filter(Category.id == product.category_id).first()
+        if product.category_id:
+            category_id = db.query(Category).filter(Category.id == product.category_id).first()
+        else:
+            category_id = db.query(Category).filter(Category.id == product_data.category_id).first()
         if not category_id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Category not found.")
-        db.query(ProductDeal).where(ProductDeal.id == product.id).update(product.model_dump(exclude={'id'}))
+        update_data = product.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(product_data, key, value)
         db.commit()
+        db.refresh(product_data)
         return ResponseGenerator(product_data, ProductDeal.__name__).generate_response()
     except SQLAlchemyError as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

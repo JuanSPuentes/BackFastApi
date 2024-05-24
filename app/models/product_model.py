@@ -23,7 +23,7 @@ class ProductDeal(Base):
     img = Column(String, nullable=True)
     discount = Column(Integer, nullable=True)
     url = Column(String, nullable=True)
-    date = Column(Date, default=func.current_timestamp())
+    date = Column(Date, default=func.current_date())
     active = Column(Integer, default=1)
     deleted = Column(Integer, default=0)
     category_id = Column(Integer, ForeignKey("categories.id"))
